@@ -10,7 +10,10 @@ import org.iskcon.nvcc.chantingApp.bs.mapper.UserDTOMapper;
 import org.iskcon.nvcc.chantingApp.dao.LoginDAO;
 import org.iskcon.nvcc.chantingApp.dao.RegistrationDAO;
 import org.iskcon.nvcc.chantingApp.dao.User;
+import org.iskcon.nvcc.chantingApp.dao.UserStatisticsDAO;
 import org.iskcon.nvcc.chantingApp.dao.UserStatus;
+import org.iskcon.nvcc.chantingApp.dao.UserStatusDAO;
+import org.iskcon.nvcc.chantingApp.dto.RefreshUserStatisticsOutputDTO;
 import org.iskcon.nvcc.chantingApp.dto.UserDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,9 +28,15 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private RegistrationDAO registrationDao;
+	
+	@Autowired
+	private UserStatusDAO userStatusDao;
 
 	@Autowired
 	private LoginDAO loginDAO;
+	
+	@Autowired
+	private UserStatisticsDAO userStatisticsDAO;
 
 	@Transactional
 	public UserDTO registerUser(UserDTO userDto) {
@@ -60,4 +69,42 @@ public class UserServiceImpl implements UserService {
 		return outputUserDto;
 	}
 
+	@Transactional
+	public Boolean changeUserStatusToActive(UserDTO userDto){
+		User userInput = UserDTOMapper.getUser(userDto, null);
+		User userOutput = loginDAO.loginUser(userInput);
+		if(null != userOutput && null != userOutput.getUserId()){
+			return userStatusDao.changeUserStatusToActive(userOutput);
+		}
+		return false;
+	}
+	
+	@Transactional
+	public Boolean changeUserStatusToNotActive(UserDTO userDto){
+		User userInput = UserDTOMapper.getUser(userDto, null);
+		User userOutput = loginDAO.loginUser(userInput);
+		if(null !=userOutput && null != userOutput.getUserId()){
+			return userStatusDao.changeUserStatusToNotActive(userOutput);
+		}
+		return false;
+	}
+	
+	@Transactional
+	public RefreshUserStatisticsOutputDTO refreshUserStatistics(UserDTO userDto){
+		User userInput =  UserDTOMapper.getUser(userDto, null);
+		User userOutput = loginDAO.loginUser(userInput);
+		RefreshUserStatisticsOutputDTO refreshUserStatisticsOutputDTO = new RefreshUserStatisticsOutputDTO();
+		if(null != userOutput && null != userOutput.getUserId()){
+		Integer totalNumberOfUsers = userStatisticsDAO.getNumberOfAllUsers();
+		Integer totalNumberOfActiveUsers = userStatisticsDAO.getNumberOfActiveUsers();
+		Integer totalNumberOfBeadsForUser = userStatisticsDAO.getTotalNumberOfBeadsForUser(userOutput);
+		Integer todaysNumberOfBeadsForUser = userStatisticsDAO.getTodaysNumberOfBeadsForUser(userOutput);
+		refreshUserStatisticsOutputDTO.setTodaysNumberOfBeadsForUser(todaysNumberOfBeadsForUser);
+		refreshUserStatisticsOutputDTO.setTotalNumberOfActiveUsers(totalNumberOfActiveUsers);
+		refreshUserStatisticsOutputDTO.setTotalNumberOfBeadsForUser(totalNumberOfBeadsForUser);
+		refreshUserStatisticsOutputDTO.setTotalNumberOfUsers(totalNumberOfUsers);	
+		return refreshUserStatisticsOutputDTO;
+		}				
+		return null;
+	}
 }
