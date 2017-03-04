@@ -7,14 +7,19 @@ import java.util.Date;
 
 import org.iskcon.nvcc.chantingApp.bs.UserService;
 import org.iskcon.nvcc.chantingApp.bs.mapper.UserDTOMapper;
+import org.iskcon.nvcc.chantingApp.dao.ChantingSessionHistory;
+import org.iskcon.nvcc.chantingApp.dao.ChantingSessionHistoryDAO;
 import org.iskcon.nvcc.chantingApp.dao.LoginDAO;
 import org.iskcon.nvcc.chantingApp.dao.RegistrationDAO;
 import org.iskcon.nvcc.chantingApp.dao.User;
 import org.iskcon.nvcc.chantingApp.dao.UserStatisticsDAO;
 import org.iskcon.nvcc.chantingApp.dao.UserStatus;
 import org.iskcon.nvcc.chantingApp.dao.UserStatusDAO;
+import org.iskcon.nvcc.chantingApp.dto.ChantingSessionDTO;
 import org.iskcon.nvcc.chantingApp.dto.RefreshUserStatisticsOutputDTO;
 import org.iskcon.nvcc.chantingApp.dto.UserDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,15 +33,24 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private RegistrationDAO registrationDao;
-	
+
 	@Autowired
 	private UserStatusDAO userStatusDao;
 
 	@Autowired
 	private LoginDAO loginDAO;
-	
+
 	@Autowired
 	private UserStatisticsDAO userStatisticsDAO;
+
+	@Autowired
+	private ChantingSessionHistoryDAO chantingSessionHistoryDAO;
+
+	/**
+	 * 
+	 */
+	private static final Logger logger = LoggerFactory
+			.getLogger(UserServiceImpl.class);
 
 	@Transactional
 	public UserDTO registerUser(UserDTO userDto) {
@@ -63,48 +77,91 @@ public class UserServiceImpl implements UserService {
 			userOutput.setLastLoginDate(new Date());
 			loginDAO.updateUser(userOutput);
 		} else {
-			//no matching record found in db corresponding to email used for login
+			// no matching record found in db corresponding to email used for
+			// login
 			outputUserDto = UserDTOMapper.getUserDTO(userOutput);
 		}
 		return outputUserDto;
 	}
 
 	@Transactional
-	public Boolean changeUserStatusToActive(UserDTO userDto){
+	public Boolean changeUserStatusToActive(UserDTO userDto) {
 		User userInput = UserDTOMapper.getUser(userDto, null);
 		User userOutput = loginDAO.loginUser(userInput);
-		if(null != userOutput && null != userOutput.getUserId()){
+		if (null != userOutput && null != userOutput.getUserId()) {
 			return userStatusDao.changeUserStatusToActive(userOutput);
 		}
 		return false;
 	}
-	
+
 	@Transactional
-	public Boolean changeUserStatusToNotActive(UserDTO userDto){
+	public Boolean changeUserStatusToNotActive(UserDTO userDto) {
 		User userInput = UserDTOMapper.getUser(userDto, null);
 		User userOutput = loginDAO.loginUser(userInput);
-		if(null !=userOutput && null != userOutput.getUserId()){
+		if (null != userOutput && null != userOutput.getUserId()) {
 			return userStatusDao.changeUserStatusToNotActive(userOutput);
 		}
 		return false;
 	}
-	
+
 	@Transactional
-	public RefreshUserStatisticsOutputDTO refreshUserStatistics(UserDTO userDto){
-		User userInput =  UserDTOMapper.getUser(userDto, null);
+	public RefreshUserStatisticsOutputDTO refreshUserStatistics(UserDTO userDto) {
+		User userInput = UserDTOMapper.getUser(userDto, null);
 		User userOutput = loginDAO.loginUser(userInput);
 		RefreshUserStatisticsOutputDTO refreshUserStatisticsOutputDTO = new RefreshUserStatisticsOutputDTO();
-		if(null != userOutput && null != userOutput.getUserId()){
-		Integer totalNumberOfUsers = userStatisticsDAO.getNumberOfAllUsers();
-		Integer totalNumberOfActiveUsers = userStatisticsDAO.getNumberOfActiveUsers();
-		Integer totalNumberOfBeadsForUser = userStatisticsDAO.getTotalNumberOfBeadsForUser(userOutput);
-		Integer todaysNumberOfBeadsForUser = userStatisticsDAO.getTodaysNumberOfBeadsForUser(userOutput);
-		refreshUserStatisticsOutputDTO.setTodaysNumberOfBeadsForUser(todaysNumberOfBeadsForUser);
-		refreshUserStatisticsOutputDTO.setTotalNumberOfActiveUsers(totalNumberOfActiveUsers);
-		refreshUserStatisticsOutputDTO.setTotalNumberOfBeadsForUser(totalNumberOfBeadsForUser);
-		refreshUserStatisticsOutputDTO.setTotalNumberOfUsers(totalNumberOfUsers);	
-		return refreshUserStatisticsOutputDTO;
-		}				
+		if (null != userOutput && null != userOutput.getUserId()) {
+			Integer totalNumberOfUsers = userStatisticsDAO
+					.getNumberOfAllUsers();
+			Integer totalNumberOfActiveUsers = userStatisticsDAO
+					.getNumberOfActiveUsers();
+			Integer totalNumberOfBeadsForUser = userStatisticsDAO
+					.getTotalNumberOfBeadsForUser(userOutput);
+			Integer todaysNumberOfBeadsForUser = userStatisticsDAO
+					.getTodaysNumberOfBeadsForUser(userOutput);
+			refreshUserStatisticsOutputDTO
+					.setTodaysNumberOfBeadsForUser(todaysNumberOfBeadsForUser);
+			refreshUserStatisticsOutputDTO
+					.setTotalNumberOfActiveUsers(totalNumberOfActiveUsers);
+			refreshUserStatisticsOutputDTO
+					.setTotalNumberOfBeadsForUser(totalNumberOfBeadsForUser);
+			refreshUserStatisticsOutputDTO
+					.setTotalNumberOfUsers(totalNumberOfUsers);
+			return refreshUserStatisticsOutputDTO;
+		}
 		return null;
+	}
+
+	@Transactional
+	public Boolean saveNewChantingSession(ChantingSessionDTO chantingSessionDto) {
+
+		User user = new User();
+		user.setEmail(chantingSessionDto.getUserName());
+		user.setPassword(chantingSessionDto.getPassword());
+		User userOutput = loginDAO.loginUser(user);
+		if (null != userOutput && null != userOutput.getUserId()) {
+			ChantingSessionHistory chantingSessionHistory = new ChantingSessionHistory();
+			chantingSessionHistory.setChantingSessionDate(chantingSessionDto
+					.getChantingSessionDate());
+			chantingSessionHistory.setChantingSessionEndTime(chantingSessionDto
+					.getChantingSessionEndTime());
+			chantingSessionHistory
+					.setChantingSessionStartTime(chantingSessionDto
+							.getChantingSessionStartTime());
+			chantingSessionHistory.setNumberOfBeads(chantingSessionDto
+					.getNumberOfBeads());
+			chantingSessionHistory.setUser(userOutput);
+			boolean saveResult = chantingSessionHistoryDAO
+					.saveNewChantingSessionHistory(chantingSessionHistory);
+			logger.info("ChantingSessionHistory saved :: {} ", saveResult);
+			// since user session is saved now ,hence reseting status of user to
+			// notActive in User table
+			boolean userStatusChange = userStatusDao
+					.changeUserStatusToNotActive(userOutput);
+			logger.info(
+					"User status changed to NotActive :: {}  for User : {}",
+					userStatusChange, userOutput.getEmail());
+			return true;
+		}
+		return false;
 	}
 }
