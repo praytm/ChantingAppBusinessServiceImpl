@@ -4,6 +4,7 @@
 package org.iskcon.nvcc.chantingApp.bs.impl;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.iskcon.nvcc.chantingApp.bs.UserService;
 import org.iskcon.nvcc.chantingApp.bs.mapper.UserDTOMapper;
@@ -15,7 +16,9 @@ import org.iskcon.nvcc.chantingApp.dao.User;
 import org.iskcon.nvcc.chantingApp.dao.UserStatisticsDAO;
 import org.iskcon.nvcc.chantingApp.dao.UserStatus;
 import org.iskcon.nvcc.chantingApp.dao.UserStatusDAO;
+import org.iskcon.nvcc.chantingApp.dto.ChantingHistoryDTO;
 import org.iskcon.nvcc.chantingApp.dto.ChantingSessionDTO;
+import org.iskcon.nvcc.chantingApp.dto.GetChantingHistoryRequestDTO;
 import org.iskcon.nvcc.chantingApp.dto.RefreshUserStatisticsOutputDTO;
 import org.iskcon.nvcc.chantingApp.dto.UserDTO;
 import org.slf4j.Logger;
@@ -117,7 +120,7 @@ public class UserServiceImpl implements UserService {
 			Integer totalNumberOfBeadsForUser = userStatisticsDAO
 					.getTotalNumberOfBeadsForUser(userOutput);
 			Integer todaysNumberOfBeadsForUser = userStatisticsDAO
-					.getTodaysNumberOfBeadsForUser(userOutput);
+					.getTodaysNumberOfBeadsForUser(userOutput, null);
 			refreshUserStatisticsOutputDTO
 					.setTodaysNumberOfBeadsForUser(todaysNumberOfBeadsForUser);
 			refreshUserStatisticsOutputDTO
@@ -164,4 +167,20 @@ public class UserServiceImpl implements UserService {
 		}
 		return false;
 	}
+
+	@Transactional
+	public ChantingHistoryDTO getChantingHistoryForUser(GetChantingHistoryRequestDTO  getChantingHistoryRequestDTO) {
+		logger.info("UserDTO email is : {}",getChantingHistoryRequestDTO.getUserDto().getEmail());
+		User userInput = UserDTOMapper.getUser(getChantingHistoryRequestDTO.getUserDto(), null);
+		User userOutput = loginDAO.loginUser(userInput);
+		if (null != userOutput && null != userOutput.getUserId()) {
+			Map<String, Integer> chantinghistoryMap = userStatisticsDAO
+					.getChantingHistoryForUser(userOutput, getChantingHistoryRequestDTO.getDateInput());
+			ChantingHistoryDTO chantingHistoryDTO = new ChantingHistoryDTO();
+			chantingHistoryDTO.setChantingHistory(chantinghistoryMap);
+			return chantingHistoryDTO;
+		}
+		return null;
+	}
+	
 }
