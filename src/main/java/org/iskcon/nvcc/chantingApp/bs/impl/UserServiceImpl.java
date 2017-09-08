@@ -56,6 +56,13 @@ public class UserServiceImpl implements UserService {
 			.getLogger(UserServiceImpl.class);
 
 	@Transactional
+	public Integer getTotalNumberOfBeadsForToday() {
+		
+	return userStatisticsDAO.getTotalNumberOfBeadsForToday();
+
+	}
+	
+	@Transactional
 	public UserDTO registerUser(UserDTO userDto) {
 		User user = UserDTOMapper.getUser(userDto, UserStatus.REGISTERED);
 		User savedUser = registrationDao.registerUser(user);
