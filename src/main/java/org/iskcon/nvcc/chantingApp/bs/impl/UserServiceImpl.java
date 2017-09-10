@@ -63,6 +63,13 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	@Transactional
+	public String getValueFromMasterData(String key) {
+		
+	return userStatisticsDAO.getValueFromMasterData(key);
+
+	}
+	
+	@Transactional
 	public UserDTO registerUser(UserDTO userDto) {
 		User user = UserDTOMapper.getUser(userDto, UserStatus.REGISTERED);
 		User savedUser = registrationDao.registerUser(user);
