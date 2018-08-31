@@ -52,6 +52,7 @@ public class UserDTOMapper {
 			user.setPassword(userDto.getPassword());
 			user.setName(userDto.getName());
 			user.setIsRegisteredViaGoogle(userDto.getIsRegisteredViaGoogle());
+			user.setProfilepic(userDto.getProfilepic());
 			user.setGoogleAuthToken(userDto.getGoogleAuthToken());
 			if(null != status){
 				user.setUserStatus(status.toString());	
