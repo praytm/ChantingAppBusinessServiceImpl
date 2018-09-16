@@ -27,6 +27,8 @@ public class UserDTOMapper {
 			userDTO.setCreatedDate(user.getCreationDate());
 			userDTO.setEmail(user.getEmail());
 			userDTO.setMobile(user.getMobile());
+			userDTO.setCity(user.getCity());
+			userDTO.setCountry(user.getCountry());
 			userDTO.setName(user.getName());
 			userDTO.setLastLoginDate(user.getLastLoginDate());
 			if(null != user.getUserId()){
@@ -49,6 +51,8 @@ public class UserDTOMapper {
 			user.setCreationDate(new Date());
 			user.setEmail(userDto.getEmail());
 			user.setMobile(userDto.getMobile());
+			user.setCity(userDto.getCity());
+			user.setCountry(userDto.getCountry());
 			user.setPassword(userDto.getPassword());
 			user.setName(userDto.getName());
 			user.setIsRegisteredViaGoogle(userDto.getIsRegisteredViaGoogle());
